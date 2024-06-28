@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QProcess>
+#include <QRegularExpression>
 
 #include "adbprocessimpl.h"
 
@@ -29,7 +30,7 @@ const QString &AdbProcessImpl::getAdbPath()
         if (s_adbPath.isEmpty() || !fileInfo.isFile()) {
             s_adbPath = g_adbPath;
         }
-        fileInfo = s_adbPath;
+        fileInfo = QFileInfo(s_adbPath);
         if (s_adbPath.isEmpty() || !fileInfo.isFile()) {
             s_adbPath = QCoreApplication::applicationDirPath() + "/adb";
         }
@@ -116,23 +117,24 @@ QStringList AdbProcessImpl::getDevicesSerialFromStdOut()
 {
     // get devices serial by adb devices
     QStringList serials;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-    QStringList devicesInfoList = m_standardOutput.split(QRegExp("\r\n|\n"), Qt::SkipEmptyParts);
-#else
-    QStringList devicesInfoList = m_standardOutput.split(QRegExp("\r\n|\n"), QString::SkipEmptyParts);
-#endif
+    #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+        QStringList devicesInfoList = m_standardOutput.split(QRegularExpression("\r\n|\n"), Qt::SkipEmptyParts);
+    #else
+        QStringList devicesInfoList = m_standardOutput.split(QRegExp("\r\n|\n"), QString::SkipEmptyParts);
+    #endif
     for (QString deviceInfo : devicesInfoList) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-        QStringList deviceInfos = deviceInfo.split(QRegExp("\t"), Qt::SkipEmptyParts);
-#else
-        QStringList deviceInfos = deviceInfo.split(QRegExp("\t"), QString::SkipEmptyParts);
-#endif
+        #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+            QStringList deviceInfos = deviceInfo.split(QRegularExpression("\t"), Qt::SkipEmptyParts);
+        #else
+            QStringList deviceInfos = deviceInfo.split(QRegExp("\t"), QString::SkipEmptyParts);
+        #endif
         if (2 == deviceInfos.count() && 0 == deviceInfos[1].compare("device")) {
             serials << deviceInfos[0];
         }
     }
     return serials;
 }
+
 
 QString AdbProcessImpl::getDeviceIPFromStdOut()
 {
@@ -146,9 +148,10 @@ QString AdbProcessImpl::getDeviceIPFromStdOut()
     }
 #else
     QString strIPExp = "inet addr:[\\d.]*";
-    QRegExp ipRegExp(strIPExp, Qt::CaseInsensitive);
-    if (ipRegExp.indexIn(m_standardOutput) != -1) {
-        ip = ipRegExp.cap(0);
+    QRegularExpression ipRegExp(strIPExp, QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatch match = ipRegExp.match(m_standardOutput);
+    if (match.hasMatch()) {
+        ip = match.captured(0);
         ip = ip.right(ip.size() - 10);
     }
 #endif
@@ -161,9 +164,10 @@ QString AdbProcessImpl::getDeviceIPByIpFromStdOut()
     QString ip = "";
 
     QString strIPExp = "wlan0    inet [\\d.]*";
-    QRegExp ipRegExp(strIPExp, Qt::CaseInsensitive);
-    if (ipRegExp.indexIn(m_standardOutput) != -1) {
-        ip = ipRegExp.cap(0);
+    QRegularExpression ipRegExp(strIPExp, QRegularExpression::CaseInsensitiveOption);
+    QRegularExpressionMatch match = ipRegExp.match(m_standardOutput);
+    if (match.hasMatch()) {
+        ip = match.captured(0);
         ip = ip.right(ip.size() - 14);
     }
     qDebug() << "get ip: " << ip;
