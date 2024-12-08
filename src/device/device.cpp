@@ -15,6 +15,7 @@ namespace qsc {
 
 Device::Device(DeviceParams params, QObject *parent) : IDevice(parent), m_params(params)
 {
+    qWarning() << "-------------------";
     if (!params.display && !m_params.recordFile) {
         qCritical("not display must be recorded");
         return;
@@ -22,9 +23,10 @@ Device::Device(DeviceParams params, QObject *parent) : IDevice(parent), m_params
 
     if (params.display) {
         m_decoder = new Decoder([this](int width, int height, uint8_t* dataY, uint8_t* dataU, uint8_t* dataV, int linesizeY, int linesizeU, int linesizeV) {
-            for (const auto& item : m_deviceObservers) {
-                item->onFrame(width, height, dataY, dataU, dataV, linesizeY, linesizeU, linesizeV);
-            }
+            // for (const auto& item : m_deviceObservers) {
+            //     // item->onFrame(width, height, dataY, dataU, dataV, linesizeY, linesizeU, linesizeV);
+            // }
+            emit onFrame(width, height, dataY, dataU, dataV, linesizeY, linesizeU, linesizeV);
         }, this);
         m_fileHandler = new FileHandler(this);
         m_controller = new Controller([this](const QByteArray& buffer) -> qint64 {

@@ -61,6 +61,7 @@ bool DeviceManage::connectDevice(qsc::DeviceParams params)
     IDevice *device = new Device(params);
     connect(device, &Device::deviceConnected, this, &DeviceManage::onDeviceConnected);
     connect(device, &Device::deviceDisconnected, this, &DeviceManage::onDeviceDisconnected);
+    connect(device, &Device::onFrame, this, &DeviceManage::onFrame);
     if (!device->connectDevice()) {
         delete device;
         return false;
@@ -105,6 +106,10 @@ void DeviceManage::onDeviceDisconnected(QString serial)
 {
     emit deviceDisconnected(serial);
     removeDevice(serial);
+}
+
+void DeviceManage::onFrame(int width, int height, uint8_t *dataY, uint8_t *dataU, uint8_t *dataV, int linesizeY, int linesizeU, int linesizeV) {
+    emit onNewFrame(width, height, dataY, dataU, dataV, linesizeY, linesizeU, linesizeV);
 }
 
 quint16 DeviceManage::getFreePort()
