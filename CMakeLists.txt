@@ -176,14 +176,16 @@ endif()
 # MacOS
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(FFMPEG REQUIRED libavcodec libavformat libavutil)
+    pkg_check_modules(FFMPEG REQUIRED libavcodec libavformat libavutil libswscale)
 
-    # 添加包含路径和库路径
     target_include_directories(${QSC_PROJECT_NAME} PRIVATE ${FFMPEG_INCLUDE_DIRS})
-    target_link_directories(${QSC_PROJECT_NAME} PRIVATE ${FFMPEG_LIBRARY_DIRS})
+    target_link_directories(${QSC_PROJECT_NAME} PUBLIC ${FFMPEG_LIBRARY_DIRS})
+    target_link_libraries(${QSC_PROJECT_NAME} PUBLIC ${FFMPEG_LIBRARIES})
 
-    # 将库链接到目标
-    target_link_libraries(${QSC_PROJECT_NAME} PRIVATE ${FFMPEG_LIBRARIES})
+    add_custom_command(TARGET ${QSC_PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/adb/mac/adb" "${QSC_DEPLOY_PATH}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/src/third_party/scrcpy-server" "${QSC_DEPLOY_PATH}"
+    )
 endif()
 
 # Linux
